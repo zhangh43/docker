@@ -24,11 +24,20 @@ RUN yum install -y epel-release && \
 RUN cd /tmp; curl https://cmake.org/files/v3.1/cmake-3.1.0-Linux-x86_64.tar.gz -o cmake-3.1.0-Linux-x86_64.tar.gz && \
   tar xzvf cmake-3.1.0-Linux-x86_64.tar.gz && cd /tmp/cmake-3.1.0-Linux-x86_64 && sudo cp -rf * /usr/
 
+# Install thirdparty dependency
+RUN mkdir /hawqrepo && pushd /hawqrepo && \
+    wget --quiet https://s3-us-west-2.amazonaws.com/pivotal-public/hdb-yum-2.1.0.0-1.tar.gz && \
+    tar xfp ./*.tar.gz --strip-components=1 && \
+    echo -e "[Thirdparty-deps]\nname=HAWQ Thirdparty dependencies\n"\
+"baseurl=file:///hawqrepo/hawq\ngpgcheck=0\nenabled=1\npriority=1" > /etc/yum.repos.d/hawq_deps.repo && \
+    rm *.tar.gz && popd && yum -y install thrift boost protobuf perl-JSON lcov libicu ldconfig
+
 # Install apache maven
 RUN curl -L "http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo" -o /etc/yum.repos.d/epel-apache-maven.repo && \
  yum install -y apache-maven && \
  yum clean all
 
+RUN yum install -y mysql-server mysql-connector-java*
 # Install python modules
 RUN pip --retries=50 --timeout=300 install pg8000 simplejson unittest2 pycrypto pyyaml lockfile paramiko psi && \
   pip --retries=50 --timeout=300 install http://darcs.idyll.org/~t/projects/figleaf-0.6.1.tar.gz && \
